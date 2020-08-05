@@ -1,7 +1,7 @@
 # flipping
 
 1. Setup golang
-2. Setup project with this script
+2. Clone project
 3. Navigate to project in terminal
 
 Example: ```go run flipping.go 25000 5000000 100000000```  
