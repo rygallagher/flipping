@@ -1,98 +1,102 @@
 package main
+
 import (
+  "encoding/json"
   "fmt"
   "io/ioutil"
   "net/http"
-  "encoding/json"
-  "sort"
   "os"
+  "sort"
   "strconv"
 )
+
 type Item struct {
   name string
   margin int
-  buyAvg int
-  buyQty int
-  sellAvg int
-  sellQty int
+  buyAverage int
+  buyQuantity int
+  sellAverage int
+  sellQuantity int
 }
+
 func main() {
   url := fmt.Sprintf("https://rsbuddy.com/exchange/summary.json")
+
+  response, err := http.Get(url)
   margin, err := strconv.Atoi(os.Args[1])
   minPrice, err := strconv.Atoi(os.Args[2])
   maxPrice, err := strconv.Atoi(os.Args[3])
-  response, err := http.Get(url)
-  if (err != nil) {
-    fmt.Printf("bad request idiot %s\n", err)
-  }
-  //data is json blob
   data, err := ioutil.ReadAll(response.Body)
-  if (err != nil) {
-    fmt.Printf("bad request idiot %s\n", err)
+
+  if err != nil {
+    fmt.Printf("Bad request %s\n", err)
   }
-  //map json to Item
+
   var responseObj map[string]interface{}
-  json.Unmarshal([]byte(data), &responseObj)
-  items := []Item{}
+  json.Unmarshal(data, &responseObj)
+  var items []Item
+
   for _, record := range responseObj {
     if rec, ok := record.(map[string] interface{}); ok {
       var name string
-      var buyAvg int
-      var sellAvg int
-      var buyQty int
-      var sellQty int
+      var buyAverage int
+      var sellAverage int
+      var buyQuantity int
+      var sellQuantity int
+
       for key, value := range rec {
         switch key {
         case "name":
           name = value.(string)
         case "buy_average":
-          buyAvg = int(value.(float64))
+          buyAverage = int(value.(float64))
         case "sell_average":
-          sellAvg = int(value.(float64))
+          sellAverage = int(value.(float64))
         case "buy_quantity":
-          buyQty = int(value.(float64))
+          buyQuantity = int(value.(float64))
         case "sell_quantity":
-          sellQty = int(value.(float64))
+          sellQuantity = int(value.(float64))
         default:
         }
       }
-      if ((buyAvg > minPrice && buyAvg < maxPrice) && (sellAvg - buyAvg > margin)) {
+
+      if (buyAverage > minPrice && buyAverage < maxPrice) && (sellAverage-buyAverage > margin) {
         var newItem Item
         newItem.name = name
-        newItem.margin = (sellAvg - buyAvg)
-        newItem.sellAvg = sellAvg
-        newItem.buyAvg = buyAvg
-        newItem.buyQty = buyQty
-        newItem.sellQty = sellQty
+        newItem.margin = sellAverage - buyAverage
+        newItem.sellAverage = sellAverage
+        newItem.buyAverage = buyAverage
+        newItem.buyQuantity = buyQuantity
+        newItem.sellQuantity = sellQuantity
         items = append(items, newItem)
       }
     }
   }
+
   sort.Slice(items[:], func(i, j int) bool { return items[i].margin < items[j].margin })
 
-  asciiArt := 
-  `
-                 ______  _  _                _               
-                |  ____|| |(_)              (_)              
-                | |__   | | _  _ __   _ __   _  _ __    __ _ 
-                |  __|  | || || '_ \ | '_ \ | || '_ \  / _  |
-                | |     | || || |_) || |_) || || | | || (_| |
-                |_|     |_||_|| .__/ | .__/ |_||_| |_| \__, |
-                              | |    | |                __/ |
-                              |_|    |_|               |___/
- `
+  fmt.Println()
+  fmt.Printf(
+    "%30s %15s %15s %15s %15s %15s %0s",
+    "Name",
+    "Margin",
+    "Buy Average",
+    "Buy Quantity",
+    "Sell Average",
+    "Sell Quantity",
+    "\n",
+  )
 
-  fmt.Println(asciiArt)
-  fmt.Println("\n")
-  fmt.Printf("%30s %12s %12s %10s %12s %10s", "Name", "Margin", "Buy Avg", "Buy Qty", "Sell Avg", "Sell Qty\n")
   for i:= 0; i < len(items); i++ {
-    fmt.Printf("%30s %12d %12d %10d %12d %10d",
+    fmt.Printf(
+      "%30s %15d %15d %15d %15d %15d %0s",
       items[i].name,
       items[i].margin,
-      items[i].buyAvg,
-      items[i].buyQty,
-      items[i].sellAvg,
-      items[i].sellQty,)
-    fmt.Println("")
+      items[i].buyAverage,
+      items[i].buyQuantity,
+      items[i].sellAverage,
+      items[i].sellQuantity,
+      "\n",
+    )
   }
 }
