@@ -1,6 +1,6 @@
 # flipping
 
-1. Setup golang
+1. https://golang.org/doc/install
 2. Clone project
 3. Run project in terminal
 
